@@ -1,0 +1,65 @@
+---
+   role_separation: false
+   configure_cluster: false
+
+   oracle_install_version_gi: 12.2.0.1
+   
+   configure_host_disks: true
+
+
+   host_fs_layout:
+    - vgname: orabasevg
+      state: present
+      filesystem:
+        - {mntp: /u01, lvname: orabaselv, lvsize: 12G, fstype: ext4}
+      disk:
+        - {device: /dev/sdb, pvname: /dev/sdb1}
+
+    - vgname: oradatavg
+      state: present
+      filesystem:
+        - {mntp: /u02, lvname: oradatalv, lvsize: 15G, fstype: ext4}
+        - {mntp: /u03, lvname: orafralv, lvsize: 10G, fstype: ext4}
+      disk:
+        - {device: /dev/sdc, pvname: /dev/sdc1}
+
+   oracle_dbf_dir_fs: /u02/oradata
+   oracle_reco_dir_fs: /u03/fra
+
+   oracle_databases:                                           # Dictionary describing the databases to be installed
+        - home: myhomeasm                                      # 'Last' directory in ORACLE_HOME path (e.g /u01/app/oracle/12.1.0.2/racdb)
+          oracle_version_db: 12.1.0.2                          # Oracle versiono
+          oracle_edition: EE                                   # The edition of database-server (EE,SE,SEONE)
+          oracle_db_name: db1                                  # Database name
+          oracle_db_passwd: Oracle123                          # Passwords (sys/system/dbsnm etc)
+          oracle_db_type: SI                                   # Type of database (RAC,RACONENODE,SI)
+          is_container: "false"                                # (true/false) Is the database a container database
+          pdb_prefix: pdb
+          num_pdbs: 1
+          is_racone: "false"                                   # (true/false) Is the database a RAC ONE NODE Database
+          storage_type: FS                                     # Database storage to be used. ASM or FS. 
+          service_name: asmdb_serv                               # Inital service to be created (not in use yet)
+          oracle_init_params: "open_cursors=300,processes=700" # Specific parameters to be set during installation. Comma-separated list
+          oracle_db_mem_percent: 30                            # Amount of RAM to be used for SGA
+          oracle_database_type: MULTIPURPOSE                   # MULTIPURPOSE|DATA_WAREHOUSING|OLTP
+          redolog_size_in_mb: 50
+          delete_db: false                                     # Should the database be deleted? (Feeds into role: oradb-delete
+
+#        - home: myhomeasm                                                     # 'Last' directory in ORACLE_HOME path (e.g /u01/app/oracle/12.1.0.2/racdb)
+#          oracle_version_db: 12.1.0.2                          # Oracle versiono
+#          oracle_edition: EE                                   # The edition of database-server (EE,SE,SEONE)
+#          oracle_db_name: asmdb2                                 # Database name
+#          oracle_db_passwd: Oracle123                          # Passwords (sys/system/dbsnm etc)
+#          oracle_db_type: SI                                   # Type of database (RAC,RACONENODE,SI)
+#          is_container: "false"                                # (true/false) Is the database a container database
+#          pdb_prefix: pdb
+#          num_pdbs: 1
+#          is_racone: "false"                                   # (true/false) Is the database a RAC ONE NODE Database
+#          storage_type: ASM                                     # Database storage to be used. ASM or FS.   
+#          service_name: asmdb_serv                               # Inital service to be created (not in use yet)
+#          oracle_init_params: "open_cursors=300,processes=700" # Specific parameters to be set during installation. Comma-separated list
+#          oracle_db_mem_percent: 30                            # Amount of RAM to be used for SGA
+#          oracle_database_type: MULTIPURPOSE                   # MULTIPURPOSE|DATA_WAREHOUSING|OLTP
+#          redolog_size_in_mb: 100
+#          delete_db: false                                     # Should the database be deleted? (Feeds into role: oradb-delete
+
