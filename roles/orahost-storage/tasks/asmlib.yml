@@ -12,12 +12,12 @@
   tags: asmlib,asmstorage
 
 - name: ASMlib | Rescan ASM disks
-  shell: /etc/init.d/oracleasm scandisks
+  shell: oracleasm scandisks
   when: device_persistence == 'asmlib'
   tags: asmlib,asmstorage
 
 - name: ASMlib | List ASM disks
-  shell: /etc/init.d/oracleasm listdisks
+  shell: oracleasm listdisks
   when: device_persistence == 'asmlib'
   register: listdisks
   tags: asmlib,asmstorage
