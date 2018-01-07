@@ -23,6 +23,7 @@
       disk:
         - {device: /dev/sdc, pvname: /dev/sdc1}
 
+   autostartup_service: True
    oracle_dbf_dir_fs: /u02/oradata
    oracle_reco_dir_fs: /u03/fra
 
@@ -44,6 +45,7 @@
           oracle_database_type: MULTIPURPOSE                   # MULTIPURPOSE|DATA_WAREHOUSING|OLTP
           redolog_size_in_mb: 50
           delete_db: false                                     # Should the database be deleted? (Feeds into role: oradb-delete
+          state: present
 
 #        - home: myhomeasm                                                     # 'Last' directory in ORACLE_HOME path (e.g /u01/app/oracle/12.1.0.2/racdb)
 #          oracle_version_db: 12.1.0.2                          # Oracle versiono
