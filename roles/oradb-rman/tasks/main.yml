@@ -23,17 +23,17 @@
   # autofs is configured in a special way to mount the shares with needed parameters
   - name: configure autofs for RMAN
     lineinfile: dest=/etc/auto.master regexp="^{{rmanautofsmount}} " line="{{rmanautofsmount}} /etc/auto.net --timeout=60 rw,hard,rsize=32768,wsize=32768,proto=tcp,nfsvers=3"
-    when: "rmanautofs|bool == true"
+    when: "rmanautofs"
     tags: autofs
 
   - name: Create Mountpoint
     file: dest={{rmanautofsmount}} state=directory
-    when: "rmanautofs|bool == true"
+    when: "rmanautofs"
     tags: autofs
 
   - name: Restart autofs
     service: name=autofs enabled=yes state=restarted
-    when: "rmanautofs|bool == true"
+    when: "rmanautofs"
     tags: autofs
 
   - name: Create bin-Directory for rman_backup
@@ -49,7 +49,16 @@
 
   # dummy with_together for item.0.db_name in default/main.yml 
   - name: Create Directory for rman-scripts
-    file: path={{oracle_admin_db}}/rman state=directory mode=0755 owner={{oracle_user}}
+    file: path={{rman_script_dir}} state=directory mode=0755 owner={{oracle_user}}
+    with_together:
+       - "{{oracle_databases}}"
+       - ""
+    tags:
+      - rmancopy
+
+  # dummy with_together for item.0.db_name in default/main.yml
+  - name: Create Directory for rman-logfiles
+    file: path={{rman_log_dir}} state=directory mode=0755 owner={{oracle_user}}
     with_together:
        - "{{oracle_databases}}"
        - ""
@@ -61,8 +70,9 @@
     tags:
       - rmancopy
 
+  # rman_script_dir: {{oracle_admin_db}}/rman/
   - name: copy RMAN scipts
-    template: dest={{oracle_admin_db}}/rman/{{item.1.name}}.rman src={{item.1.name}}.rman.j2 backup=yes mode=644 owner={{oracle_user}}
+    template: dest={{rman_script_dir}}/{{item.1.name}}.rman src={{item.1.name}}.rman.j2 backup=yes mode=644 owner={{oracle_user}}
     with_subelements:
        - "{{oracle_databases}}"
        - rman_jobs
@@ -74,23 +84,23 @@
   # The execution isn't done in async mode!
   # The task is only execute once on master_node when GI is installed!
   - name: Execute RMAN-Script at playbook
-    shell: "{{oracle_base}}/bin/rman_backup.sh -a {{item.1.name}} -s {{item.0.oracle_db_name}} -r {{oracle_admin_db}}/rman -l {{oracle_admin_db}}/rman | tee -a {{rman_cron_logdir}}/rman_{{item.1.name}}.log"
+    shell: "{{oracle_base}}/bin/rman_backup.sh -a {{item.1.name}} -s {{item.0.oracle_db_name}} -r {{rman_script_dir}} -l {{rman_log_dir}} | tee -a {{rman_cron_logdir}}/rman_{{item.1.name}}.log"
     environment:
       - PATH: /bin:/usr/bin
     become: yes
     become_user: "{{ oracle_user }}"
-    when: "'parameter' in item.1.name"
     register: rmanexecimmediate
     with_subelements:
        - "{{oracle_databases}}"
        - rman_jobs
-    when: item.1.immediate | default(false) == true and ((oracle_install_option_gi | default('SI') == 'CRS_CONFIG' and master_node) or oracle_install_option_gi != 'CRS_CONFIG')
+    when: master_node and item.1.immediate | default(false) == true
     tags:
       - rmanexecute
 
   - debug: msg={{item.results[0].stdout_lines}}
     with_items:
       - "{{rmanexecimmediate}}"
+    when: rmanexecimmediate is defined and item.results[0].stdout_lines is defined
     tags:
       - rmanexecute
 
@@ -104,7 +114,7 @@
       weekday: "{{item.1.weekday}}"
       hour: "{{item.1.hour}}"
       minute: "{{item.1.minute}}"
-      job: "{{oracle_base}}/bin/rman_backup.sh -a {{item.1.name}} -s {{item.0.oracle_db_name}} -r {{oracle_admin_db}}/rman -l {{oracle_admin_db}}/rman {{rman_service_param}} >> {{rman_cron_logdir}}/rman_{{item.1.name}}.log 2>&1"
+      job: "{{ check_mk_mkjob }}{{oracle_base}}/bin/rman_backup.sh -a {{item.1.name}} -s {{item.0.oracle_db_name}} -r {{rman_script_dir}} -l {{rman_log_dir}} {{rman_service_param}} >> {{rman_cron_logdir}}/rman_{{item.0.oracle_db_name}}_{{item.1.name}}.log 2>&1"
     with_subelements:
        - "{{oracle_databases}}"
        - rman_jobs
@@ -116,6 +126,11 @@
       - item.1.hour is defined
       - item.1.minute is defined
       - item.1.name is defined
-      - item.0.oracle_install_option_gi | default('SI') != ('CRS_CONFIG')
     tags:
       - rmancron
+
+  - name: Create directory for mk-job
+    file: dest=/var/lib/check_mk_agent/job/{{oracle_user}} state=directory owner={{oracle_user}}
+    when: "rman_cron_mkjob"
+    tags: rmancron
+
