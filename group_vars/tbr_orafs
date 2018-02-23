@@ -27,6 +27,13 @@
    oracle_dbf_dir_fs: /u02/oradata
    oracle_reco_dir_fs: /u03/fra
 
+   rman_script_dir:                  /u01/app/oracle/rman
+   rman_log_dir:                     /u01/app/oracle/rman/log
+   rman_retention_policy:            "RECOVERY WINDOW OF 14 DAYS"
+   rman_channel_disk:                "FORMAT   '/u10/rmanbackup/%d/%d_%T_%U'"
+   rman_controlfile_autobackup_disk: "'/u10/rmanbackup/%d/%d_%F'"
+
+
    oracle_databases:                                           # Dictionary describing the databases to be installed
         - home: myhomeasm                                      # 'Last' directory in ORACLE_HOME path (e.g /u01/app/oracle/12.1.0.2/racdb)
           oracle_version_db: 12.1.0.2                          # Oracle versiono
@@ -46,6 +53,17 @@
           redolog_size_in_mb: 50
           delete_db: false                                     # Should the database be deleted? (Feeds into role: oradb-delete
           state: present
+
+
+          rman_jobs:
+             - name: parameter
+               immediate: True                                # write rman configuration to database dureing playbook execution
+             - name: offline_level0
+               disabled: False
+               day: "*"
+               weekday: "0"
+               hour: "05"
+               minute: "30"
 
 #        - home: myhomeasm                                                     # 'Last' directory in ORACLE_HOME path (e.g /u01/app/oracle/12.1.0.2/racdb)
 #          oracle_version_db: 12.1.0.2                          # Oracle versiono
