@@ -1,4 +1,5 @@
 
+  master_node: true
   oracle_user: oracle 
   oracle_base: /u01/app/oracle
 
