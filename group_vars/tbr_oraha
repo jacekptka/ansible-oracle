@@ -1,16 +1,11 @@
 ---
-   role_separation: false
-   configure_cluster: false
-
-   oracle_install_version_gi: 12.1.0.2
-   
    configure_host_disks: true
    host_fs_layout:    
 
     - vgname: orabasevg
       state: present
       filesystem:
-        - {mntp: /u01, lvname: orabaselv, lvsize: 17G, fstype: ext4}
+        - {mntp: /u01, lvname: orabaselv, lvsize: 35G, fstype: ext4}
       disk:
         - {device: /dev/sdb, pvname: /dev/sdb1}
 
@@ -37,23 +32,21 @@
         - {device: /dev/sdd, asmlabel: fra01}
 
 
-#   asm_storage_layout:    # Mapping between device & ASMlib label. If storage_type=ASM under oracle_databases, this is where the mapping between device/asm-disk is described
-#    data:
-#      - {device: /dev/sdc, asmlabel: data01}
-#    fra:
-#      - {device: /dev/sdd, asmlabel: fra01 }
+   oracle_install_version_gi: 12.2.0.1
+   oracle_sw_image_gi_psu:
+      - { filename: p27100009_122010_Linux-x86-64.zip, patchid: 27100009, version: 12.2.0.1, patchversion: 12.2.0.1.180116, description: GI-PSU-Jan-2018 }
 
-   oracle_dbf_dir_asm: "DATA"                                        # If storage_type=ASM this is where the database is placed.
-   oracle_reco_dir_asm: "FRA"                                        # If storage_type=ASM this is where the fast recovery area is placed
-
+   datafile_dest: "+DATA"
+   recoveryfile_dest: "+FRA"
 
    oracle_databases:                                            # Dictionary describing the databases to be installed
         - home: db1                                            # 'Last' directory in ORACLE_HOME path (e.g /u01/app/oracle/12.1.0.2/racdb)
-          oracle_version_db: 12.1.0.2                          # Oracle versiono
+          oracle_version_db: 12.2.0.1                          # Oracle versiono
           oracle_edition: EE                                   # The edition of database-server (EE,SE,SEONE)
           oracle_db_name: orclcdb                               # Database name
+          dbca_templatename: tbr_dbca.dbc
           oracle_db_passwd: Oracle123                          # Passwords (sys/system/dbsnm etc)
-          oracle_db_type: RAC                                  # Type of database (RAC,RACONENODE,SI)
+          oracle_db_type: SI                                  # Type of database (RAC,RACONENODE,SI)
           is_container: false                                  # (true/false) Is the database a container database
           pdb_prefix: orclpdb
           num_pdbs: 1
