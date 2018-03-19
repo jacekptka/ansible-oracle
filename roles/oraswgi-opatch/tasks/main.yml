@@ -5,7 +5,9 @@
     become: yes
     become_user: "{{ grid_install_user }}"
     with_items: "{{oracle_sw_image_gi_psu}}"
-    tags: check_applied_gi_patches
+    tags: 
+       - check_applied_gi_patches
+       - apply_psu_grid
     when: oracle_psu_apply_gi #and "{{ item.version }}" == "{{ oracle_install_version_gi }}"
     register: gi_applied_patches
 
@@ -92,7 +94,7 @@
 #    when: checkgiinstall.stdout != "1" and "{{ oracle_install_version_gi }}" == "{{ item.version }}" and not oracle_sw_copy|bool and oracle_sw_unpack|bool
 
   - name: Distribute latest opatch
-    shell: rm -rf {{ oracle_home_gi }}/OPatch; cp -Rvp {{ oracle_psu_stage }}/{{ oracle_install_version_gi }}/OPatch {{ oracle_home_gi }}; chown -R {{ grid_install_user }}:{{ oracle_group }} {{ oracle_home_gi }}/OPatch
+    shell: rm -rf {{ oracle_home_gi }}/OPatch; cp -Rvp {{ oracle_stage_remote }}/{{ oracle_install_version_gi }}/OPatch {{ oracle_home_gi }}; chown -R {{ grid_install_user }}:{{ oracle_group }} {{ oracle_home_gi }}/OPatch
     when: oracle_psu_apply_gi
     tags:
       - oragridnewopatch
@@ -114,13 +116,13 @@
   #     - ocmconfig
 
   - name: Apply PSU to GI (v12.1) (Master node)
-    shell: "{{ oracle_home_gi }}/OPatch/opatchauto apply {{ oracle_psu_stage }}/{{ oracle_install_version_gi }}/{{ item.0.patchid }} -oh {{ oracle_home_gi }}" #-ocmrf {{ oracle_psu_stage }}/{{ oracle_install_version_gi }}/ocm.rsp "
+    shell: "{{ oracle_home_gi }}/OPatch/opatchauto apply {{ oracle_stage_remote }}/{{ oracle_install_version_gi }}/{{ item.0.patchid }} -oh {{ oracle_home_gi }}" #-ocmrf {{ oracle_psu_stage }}/{{ oracle_install_version_gi }}/ocm.rsp "
     with_together:
        - "{{oracle_sw_image_gi_psu}}"
        - "{{gi_applied_patches.results}}"
     tags:
       - apply_psu_grid
-    when: master_node and oracle_psu_apply_gi and '12.1' in oracle_install_version_gi and item.0.version == oracle_install_version_gi and not item.1.stdout != 0
+    when: master_node and oracle_psu_apply_gi and '12' in oracle_install_version_gi and item.0.version == oracle_install_version_gi #and not item.1.stdout != 0
     register: psuapplym
 
 
