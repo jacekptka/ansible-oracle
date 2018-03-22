@@ -1,0 +1,8 @@
+{{rman_catalog_service}}{% for item in oracle_databases if item.rman_tnsalias is defined %}, {{item.rman_tnsalias}}{% endfor %} =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = {{rman_catalog_host}}) (Port = {{rman_catalog_port | default('1521')}}))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = {{rman_catalog_service}})
+    )
+  )

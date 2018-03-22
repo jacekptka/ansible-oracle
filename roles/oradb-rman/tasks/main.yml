@@ -79,10 +79,58 @@
     tags:
       - rmancopy
 
+  - name: Create directory for TNS_ADMIN
+    file: dest={{rman_tns_admin}} state=directory owner={{oracle_user}}
+    with_items:
+       - "{{oracle_databases}}"
+    when: item.rman_tnsalias is defined
+    tags:
+      - tns
+
+  - name: copy sqlnet.ora for wallet
+    template: src=sqlnet.ora.j2 dest={{rman_tns_admin}}/sqlnet.ora owner={{oracle_user}} mode=644
+    with_items:
+       - "{{oracle_databases}}"
+    when: item.rman_tnsalias is defined
+    tags:
+      - tns
+
+  - name: copy tnsnames.ora for catalog
+    template: src=tnsnames.ora.j2 dest={{rman_tns_admin}}/tnsnames.ora owner={{oracle_user}} mode=644 backup=True
+    with_items:
+       - "{{oracle_databases}}"
+    when: item.rman_tnsalias is defined
+    tags:
+      - tns
+
+  - name: Wallet create
+    shell: "test -d {{rman_wallet_loc}} || echo -e '{{rman_wallet_password}}\n{{rman_wallet_password}}' | {{oracle_home_db}}/bin/mkstore -create -nologo -wrl {{rman_wallet_loc}}"
+    become: yes
+    become_user: "{{ oracle_user }}"
+    with_items:
+       - "{{oracle_databases}}"
+    when: item.rman_tnsalias is defined
+    tags:
+      - wallet
+
+  # no_log => secure password against logfiles
+  # ignore errors during createCredential when entry is existing
+  - name: Wallet createCredential
+    shell: "echo -e '{{rman_wallet_password}}' | {{oracle_home_db}}/bin/mkstore -wrl {{rman_wallet_loc}} -nologo -createCredential {{item.rman_tnsalias}} {{item.rman_user}} {{item.rman_password}}; exit 0"
+    become: yes
+    become_user: "{{ oracle_user }}"
+    no_log: true
+    with_items:
+       - "{{oracle_databases}}"
+    when: item.rman_tnsalias is defined and item.rman_user is defined and item.rman_password is defined
+    tags:
+      - wallet
+
   # the following task is usefull for configuration of rman-parameters during setup of RMAN
   # It's also possible to execute the 1st Level0-Backup after setup, but be aware to configure the RMAN before starting a backup
   # The execution isn't done in async mode!
   # The task is only execute once on master_node when GI is installed!
+  # no catalog connection, because setting initial parameters with catalog takes much more time
   - name: Execute RMAN-Script at playbook
     shell: "{{oracle_base}}/bin/rman_backup.sh -a {{item.1.name}} -s {{item.0.oracle_db_name}} -r {{rman_script_dir}} -l {{rman_log_dir}} | tee -a {{rman_cron_logdir}}/rman_{{item.1.name}}.log"
     environment:
@@ -104,6 +152,20 @@
     tags:
       - rmanexecute
 
+  - name: Add Environment variables to /ec/cron.d
+    cron: 
+      cron_file: "{{rman_cronfile}}"
+      user: "{{oracle_user}}"
+      env: yes
+      name: "{{ item.name }}"
+      value: "{{ item.value }}"
+    with_items:
+      - { name: RMANLOGDIR    , value: '{{ rman_log_dir }}' }
+      - { name: RMANSCRIPTDIR , value: '{{ rman_script_dir }}' }
+      - { name: RMANTNS_ADMIN , value: '{{ rman_tns_admin }}' }
+    tags:
+      - rmancron
+
   - name: Create crontab entries for RMAN Backup
     cron: 
       name: rman_backup_{{item.0.oracle_db_name}}_{{item.1.name}}
@@ -114,7 +176,7 @@
       weekday: "{{item.1.weekday}}"
       hour: "{{item.1.hour}}"
       minute: "{{item.1.minute}}"
-      job: "{{ check_mk_mkjob }}{{oracle_base}}/bin/rman_backup.sh -a {{item.1.name}} -s {{item.0.oracle_db_name}} -r {{rman_script_dir}} -l {{rman_log_dir}} {{rman_service_param}} >> {{rman_cron_logdir}}/rman_{{item.0.oracle_db_name}}_{{item.1.name}}.log 2>&1"
+      job: "{{ check_mk_mkjob }}{{oracle_base}}/bin/rman_backup.sh -a {{item.1.name}} -s {{item.0.oracle_db_name}} {{rman_service_param}} {{rman_catalog_param}} {{rmanbackuplogdir}} {{rmanbackupscriptdir}}>> {{rman_cron_logdir}}/rman_{{item.0.oracle_db_name}}_{{item.1.name}}.log 2>&1"
     with_subelements:
        - "{{oracle_databases}}"
        - rman_jobs
