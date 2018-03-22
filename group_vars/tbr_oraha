@@ -39,6 +39,18 @@
    datafile_dest: "+DATA"
    recoveryfile_dest: "+FRA"
 
+   rman_script_dir:                  /u01/app/oracle/rman/script
+   rman_log_dir:                     /u01/app/oracle/rman/log
+
+   rman_retention_policy:            "RECOVERY WINDOW OF 14 DAYS"
+   rman_channel_disk:                "FORMAT   '/u10/rmanbackup/%d/%d_%T_%U'"
+   rman_controlfile_autobackup_disk: "'/u10/rmanbackup/%d/%d_%F'"
+
+   # RMAN-Catalog
+   rman_catalog_host: localhost              # Hostname of RMAN-Cataloghost
+   rman_catalog_service: orclpdb             # Service of RMAN-Catalogdatabase
+
+
    oracle_databases:                                            # Dictionary describing the databases to be installed
         - home: db1                                            # 'Last' directory in ORACLE_HOME path (e.g /u01/app/oracle/12.1.0.2/racdb)
           oracle_version_db: 12.2.0.1                          # Oracle versiono
@@ -47,7 +59,7 @@
           dbca_templatename: tbr_dbca.dbc
           oracle_db_passwd: Oracle123                          # Passwords (sys/system/dbsnm etc)
           oracle_db_type: SI                                  # Type of database (RAC,RACONENODE,SI)
-          is_container: false                                  # (true/false) Is the database a container database
+          is_container: true                                  # (true/false) Is the database a container database
           pdb_prefix: orclpdb
           num_pdbs: 1
           storage_type: ASM                                    # Database storage to be used. ASM or FS.
@@ -57,4 +69,32 @@
           oracle_init_params:
           redolog_size_in_mb: 100
           state: present
+
+          # RMAN-Catalogconnect
+          rman_user: rmancat
+          rman_password: rman
+          rman_tnsalias: orclpdb
+          rman_wallet: True
+
+          rman_jobs:
+            - name: parameter
+            - name: archivelog_enable
+            - name: archivelog
+              disabled: False
+              day: "*"
+              weekday: "*"
+              hour: "*"
+              minute: "10"
+            - name: online_level0
+              disabled: False
+              day: "*"
+              weekday: "0"
+              hour: "02"
+              minute: "30"
+            - name: online_level1
+              disabled: False
+              day: "*"
+              weekday: "1-6"
+              hour: "02"
+              minute: "30"
 

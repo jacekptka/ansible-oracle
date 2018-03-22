@@ -26,4 +26,5 @@
    roles:
       - oraswdb-install
       - oradb-create
+      - oradb-rman
       - orahost-logrotate
