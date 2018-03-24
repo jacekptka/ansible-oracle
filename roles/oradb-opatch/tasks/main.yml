@@ -118,20 +118,22 @@
   # Remember that many Database with same ORACLE_HOME may exists
   - name: Remove existing OPatch
     no_log: true
-    file: path={{item.oracle_home}}/OPatch state=absent
+    file: path={{oracle_home_db}}/OPatch state=absent
     become: yes
     become_user: "{{ oracle_user }}"
-    with_items:
+    with_together:
       - "{{oracle_databases}}"
+      - ""
     when: oracle_psu_apply_db
     tags:
       - updateopatch
 
   # use test -d to copy the OPatch only one time for many databases in oracle_databases!
   - name: Distribute latest opatch
-    shell: "test -d {{ item.oracle_home }}/OPatch || cp -Rvp {{ oracle_stage_remote }}/{{ item.oracle_version_db }}/OPatch {{ item.oracle_home }}"
-    with_items:
+    shell: "test -d {{oracle_home_db}}/OPatch || unzip -d {{oracle_home_db}} /sw/oracle/linux64/12.1.0.2/patch/p6880880_122010_Linux-x86-64.zip"
+    with_together:
       - "{{oracle_databases}}"
+      - ""
     become: yes
     become_user: "{{ oracle_user }}"
     when: oracle_psu_apply_db
