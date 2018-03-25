@@ -260,15 +260,22 @@
       - opatchapply
 
   - name: Apply Patches with OPatch opatchauto
-    shell: "{{item.path}}/OPatch/opatchauto apply -silent -oh {{item.path}}  {{patchpath}}"
+    shell: "{{item.path}}/OPatch/opatchauto apply -oh {{item.path}}  {{patchpath}}"
     with_items:
        - "{{patch_oh_list}}"
     become: yes
-    become_user: "{{ oracle_user }}"
     when: oracle_psu_apply_db and {{ item.opatchauto | default(false) }} and {{ item.apply | default(false)}}
-    register: opatchapplyresult
+    register: opatchautoapplyresult
     tags:
       - opatchautoapply
+
+  - debug: msg={{item.stdout_lines}}
+    with_items:
+       - "{{opatchautoapplyresult.results[0]}}"
+    when: opatchautoapplyresult is defined and item.changed
+    tags:
+      - opatchautoapply
+
 
   - name: Apply Patches with OPatch apply
     shell: "{{item.path}}/OPatch/opatch apply -silent -oh {{item.path}}  {{patchpath}}"
@@ -286,7 +293,7 @@
   - debug: msg={{item.stdout_lines}}
     with_items:
        - "{{opatchapplyresult.results[0]}}"
-    when: item.changed
+    when: opatchapplyresult is defined and item.changed
     tags:
       - opatchautoapply
       - opatchapply
