@@ -51,6 +51,16 @@
    rman_catalog_service: orclpdb             # Service of RMAN-Catalogdatabase
 
 
+   oracle_patch_list:
+      - desc: "Database Release Update : 12.2.0.1.180116"
+        patchid: 27105253
+        subpath: 27100009
+        version: 12.2.0.1
+        opatchauto: True
+        ORACLE_HOME:
+           - path: /u01/app/oracle/12.2.0.1/db1
+             apply: True
+
    oracle_databases:                                            # Dictionary describing the databases to be installed
         - home: db1                                            # 'Last' directory in ORACLE_HOME path (e.g /u01/app/oracle/12.1.0.2/racdb)
           oracle_version_db: 12.2.0.1                          # Oracle versiono
