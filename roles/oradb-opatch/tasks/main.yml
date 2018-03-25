@@ -157,7 +157,7 @@
   #     - ocmconfig
 
   - name: Check which RDBMS patches are applied
-    shell: "{{ item.oracle_home }}/OPatch/opatch lspatches -oh {{ item.oracle_home }}"
+    shell: "{{ item.oracle_home }}/OPatch/opatch lspatches -oh {{ item.oracle_home }} | grep ';'| cut -d';' -f1"
     become: yes
     become_user: "{{ oracle_user }}"
     with_items:
@@ -167,8 +167,19 @@
     tags:
       - check_applied_patches
 
-  - debug: msg={{item.stdout_lines}}
-    with_items: "{{db_applied_patches.results}}"
+  - name: Set facts for applied Patches
+    no_log: true
+    set_fact:
+      patch_applied_list: "{{patch_applied_list|default([]) + [{ 'oracle_home': item.0.item['oracle_home'], 'patch': item.1 }]}}"
+    with_subelements: 
+       - "{{db_applied_patches.results}}"
+       - stdout_lines
+    tags:
+      - check_applied_patches
+
+  - debug: msg={{item}}
+    with_items:
+      - "{{patch_applied_list}}"
     tags:
       - check_applied_patches
 
