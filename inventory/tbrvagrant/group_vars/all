@@ -1,7 +1,11 @@
 ---
+  configure_motd: False
   is_sw_source_local: true
   oracle_sw_copy: False
   oracle_sw_unpack: False
+
+  configure_hugepages_by: memory
+  size_in_gb_hugepages: 2
 
   oracle_stage_remote: /sw/oracle/linux64
 
