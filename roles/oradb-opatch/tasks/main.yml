@@ -130,7 +130,7 @@
 
   # use test -d to copy the OPatch only one time for many databases in oracle_databases!
   - name: Distribute latest opatch
-    shell: "test -d {{oracle_home_db}}/OPatch || unzip -d {{oracle_home_db}} /sw/oracle/linux64/12.1.0.2/patch/p6880880_122010_Linux-x86-64.zip"
+    shell: "test -d {{oracle_home_db}}/OPatch || unzip -d {{oracle_home_db}} {{opatcharchive}}"
     with_together:
       - "{{oracle_databases}}"
       - ""
