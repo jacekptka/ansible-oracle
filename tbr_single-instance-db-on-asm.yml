@@ -17,7 +17,6 @@
    roles:
       - oraswgi-install
       - oraasm-createdg
-      - oraswgi-opatch/
 
  - name: Database Server Installation & Database Creation
    hosts: tbr_oraha
