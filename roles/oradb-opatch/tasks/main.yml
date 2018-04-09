@@ -220,7 +220,7 @@
        - "{{patch_oh_list}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: oracle_psu_apply_db and "12." in "{{ item.version }}" and not {{ item.opatchauto }} and {{ item.apply }}
+    when: oracle_psu_apply_db and "12." in item.version  and not item.opatchauto and item.apply
     register: opatchprereq2
     changed_when: "'failed' in opatchprereq2.stdout"
     tags:
@@ -241,7 +241,7 @@
        - "{{patch_oh_list}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: oracle_psu_apply_db and "12." in "{{ item.version }}" and not {{ item.opatchauto }} and {{ item.apply }} and oracle_install_option_gi is not defined
+    when: oracle_psu_apply_db and "12." in  item.version  and not item.opatchauto and item.apply and oracle_install_option_gi is not defined
     register: opatchprereq1
     changed_when: "'failed' in opatchprereq1.stdout"
     tags:
@@ -288,7 +288,7 @@
     with_items:
        - "{{patch_oh_list}}"
     become: yes
-    when: oracle_psu_apply_db and {{ item.opatchauto | default(false) }} and {{ item.apply | default(false)}}
+    when: oracle_psu_apply_db and item.opatchauto | default(false) and item.apply | default(false)
     register: opatchautoapplyresult
     tags:
       - opatchautoapply
@@ -302,12 +302,12 @@
 
 
   - name: Apply Patches with OPatch apply
-    shell: "{{item.path}}/OPatch/opatch apply -silent -oh {{item.path}}  {{patchpath}}"
+    shell: "{{item.path}}/OPatch/opatch apply -silent -ocmrf {{item.path}}/OPatch/ocm.rsp -oh {{item.path}}  {{patchpath}}"
     with_items:
        - "{{patch_oh_list}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: oracle_psu_apply_db and not {{ item.opatchauto }} and {{ item.apply }}
+    when: oracle_psu_apply_db and not item.opatchauto and item.apply
     failed_when: "'failed' in opatchapplyresult.stdout"
     changed_when: not "'These patch(es) will be skipped' in opatchapplyresult.stdout"
     register: opatchapplyresult
