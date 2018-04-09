@@ -140,21 +140,27 @@
     tags:
       - updateopatch
 
-  # - name: Configure ocm.rsp (1)
-  #   template: src=ocmrsp.expect.j2  dest={{ oracle_psu_stage }}/{{ oracle_install_version_gi }}/ocmrsp.expect mode=0777 force=yes
-  #   when: oracle_psu_apply_db #and not {{ item.1.stdout }} != 0
-  #   become: yes
-  #   become_user: "{{ oracle_user }}"
-  #   tags:
-  #     - ocmconfig
-  #
-  # - name: Configure ocm.rsp (2)
-  #   shell: "{{ oracle_psu_stage }}/{{ oracle_install_version_gi }}/ocmrsp.expect"
-  #   when: oracle_psu_apply_db #and not {{ item.1.stdout }} != 0
-  #   become: yes
-  #   become_user: "{{ oracle_user }}"
-  #   tags:
-  #     - ocmconfig
+  - name: Configure ocm.rsp (1)
+    template: src=ocmrsp_helper.sh  dest={{ oracle_stage }}/rsp/ocmrsp_helper.sh mode=0755
+    with_together:
+      - "{{oracle_databases}}"
+      - ""
+    become: yes
+    become_user: "{{ oracle_user }}"
+    when: oracle_psu_apply_db and ('11.2' in item.0.oracle_version_db or '11.2' in item.0.oracle_version_db)
+    tags:
+      - ocmconfig
+
+  - name: Configure ocm.rsp (2)
+    shell: "{{ oracle_stage }}/rsp/ocmrsp_helper.sh {{oracle_home_db}} {{oracle_home_db}}/OPatch//ocm.rsp"
+    with_together:
+      - "{{oracle_databases}}"
+      - ""
+    when: oracle_psu_apply_db and ('11.2' in item.0.oracle_version_db or '11.2' in item.0.oracle_version_db)
+    become: yes
+    become_user: "{{ oracle_user }}"
+    tags:
+      - ocmconfig
 
   - name: Check which RDBMS patches are applied
     shell: "{{ item.oracle_home }}/OPatch/opatch lspatches -oh {{ item.oracle_home }} | grep ';'| cut -d';' -f1"
@@ -182,6 +188,7 @@
       - "{{patch_applied_list}}"
     tags:
       - check_applied_patches
+    when: patch_applied_list is defined
 
   #
   - name: Copy helper script to stage
@@ -259,6 +266,23 @@
       - opatchprereq
       - opatchapply
 
+
+  # - name: Configure ocm.rsp (1)
+  #   template: src=ocmrsp.expect.j2  dest={{ oracle_psu_stage }}/{{ oracle_install_version_gi }}/ocmrsp.expect mode=0777 force=yes
+  #   when: oracle_psu_apply_gi #and not {{ item.1.stdout }} != 0
+  #   become: yes
+  #   become_user: "{{ grid_install_user }}"
+  #   tags:
+  #     - ocmconfig
+  #
+  # - name: Configure ocm.rsp (2)
+  #   shell: "{{ oracle_psu_stage }}/{{ oracle_install_version_gi }}/ocmrsp.expect"
+  #   when: oracle_psu_apply_gi #and not {{ item.1.stdout }} != 0
+  #   become: yes
+  #   become_user: "{{ grid_install_user }}"
+  #   tags:
+#     - ocmconfig
+
   - name: Apply Patches with OPatch opatchauto
     shell: "{{item.path}}/OPatch/opatchauto apply -oh {{item.path}}  {{patchpath}}"
     with_items:
@@ -283,7 +307,7 @@
        - "{{patch_oh_list}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: oracle_psu_apply_db and "12." in "{{ item.version }}" and not {{ item.opatchauto }} and {{ item.apply }}
+    when: oracle_psu_apply_db and not {{ item.opatchauto }} and {{ item.apply }}
     failed_when: "'failed' in opatchapplyresult.stdout"
     changed_when: not "'These patch(es) will be skipped' in opatchapplyresult.stdout"
     register: opatchapplyresult
