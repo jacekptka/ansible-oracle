@@ -266,23 +266,6 @@
       - opatchprereq
       - opatchapply
 
-
-  # - name: Configure ocm.rsp (1)
-  #   template: src=ocmrsp.expect.j2  dest={{ oracle_psu_stage }}/{{ oracle_install_version_gi }}/ocmrsp.expect mode=0777 force=yes
-  #   when: oracle_psu_apply_gi #and not {{ item.1.stdout }} != 0
-  #   become: yes
-  #   become_user: "{{ grid_install_user }}"
-  #   tags:
-  #     - ocmconfig
-  #
-  # - name: Configure ocm.rsp (2)
-  #   shell: "{{ oracle_psu_stage }}/{{ oracle_install_version_gi }}/ocmrsp.expect"
-  #   when: oracle_psu_apply_gi #and not {{ item.1.stdout }} != 0
-  #   become: yes
-  #   become_user: "{{ grid_install_user }}"
-  #   tags:
-#     - ocmconfig
-
   - name: Apply Patches with OPatch opatchauto
     shell: "{{item.path}}/OPatch/opatchauto apply -oh {{item.path}}  {{patchpath}}"
     with_items:
@@ -300,9 +283,8 @@
     tags:
       - opatchautoapply
 
-
   - name: Apply Patches with OPatch apply
-    shell: "{{item.path}}/OPatch/opatch apply -silent -ocmrf {{item.path}}/OPatch/ocm.rsp -oh {{item.path}}  {{patchpath}}"
+    shell: "{{item.path}}/OPatch/opatch apply -silent {{ocmrfparam}} -oh {{item.path}} {{patchpath}}"
     with_items:
        - "{{patch_oh_list}}"
     become: yes
@@ -314,10 +296,10 @@
     tags:
       - opatchapply
 
-  - debug: msg={{item.stdout_lines}}
+  - debug: var={{item.stdout_lines}}
     with_items:
-       - "{{opatchapplyresult.results[0]}}"
-    when: opatchapplyresult is defined and item.changed
+       - "{{opatchapplyresult.results}}"
+    when: opatchapplyresult is defined
     tags:
       - opatchautoapply
       - opatchapply
@@ -336,7 +318,6 @@
       - stopalldbs
       - opatchapply
       - datapatchdbs
-
 
   - debug: var={{item.stdout_lines}}
     with_items:
