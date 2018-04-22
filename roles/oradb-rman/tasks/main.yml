@@ -71,7 +71,7 @@
       - rmancopy
 
   - name: copy rman_env.sh
-    template: dest={{oracle_base}}/bin src=rman_env.sh.j2 backup=yes mode=755
+    template: dest={{oracle_base}}/bin/rman_env.sh src=rman_env.sh.j2 backup=yes mode=755
     tags:
       - rmancopy
 
@@ -127,7 +127,7 @@
     no_log: true
     with_items:
        - "{{oracle_databases}}"
-    when: item.rman_tnsalias is defined and item.rman_wallet and item.rman_user is defined and item.rman_password is define
+    when: item.rman_tnsalias is defined and item.rman_wallet and item.rman_user is defined and item.rman_password is defined
     tags:
       - wallet
 
