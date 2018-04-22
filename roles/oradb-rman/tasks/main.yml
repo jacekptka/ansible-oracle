@@ -70,6 +70,11 @@
     tags:
       - rmancopy
 
+  - name: copy rman_env.sh
+    template: dest={{oracle_base}}/bin src=rman_env.sh.j2 backup=yes mode=755
+    tags:
+      - rmancopy
+
   # rman_script_dir: {{oracle_admin_db}}/rman/
   - name: copy RMAN scipts
     template: dest={{rman_script_dir}}/{{item.1.name}}.rman src={{item.1.name}}.rman.j2 backup=yes mode=644 owner={{oracle_user}}
