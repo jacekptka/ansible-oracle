@@ -10,10 +10,15 @@
 #   The database is stopped before opatch apply and started before datapatch. It won't be stopped
 #   after datapach if the instance was not running before!
 
+  - name: Verify Ansible Version <= 2.4
+    assert:
+      that: "ansible_version.full | version_compare('2.5', '<')"
+      msg: >
+          "Ansible 2.5 doesn't work with set_facts in this role at the moment. Use Ansible <= 2.4"
   # environment is needed for OL/SLES, due to different directories for executables...
   # grep LOC= in /u01/app/oraInventory/ContentsXML/inventory.xml and search for LOC=
   - name: Get ORACLE_HOMEs from oraInventory
-    shell: grep "LOC=" $(cat /etc/oraInst.loc | grep inventory_loc | cut -d"=" -f2)/ContentsXML/inventory.xml | sed 's#.*LOC=##g' | cut -d" " -f1 | /usr//bin/sed 's#"##g'
+    shell: grep "LOC=" $(cat /etc/oraInst.loc | grep inventory_loc | cut -d"=" -f2)/ContentsXML/inventory.xml | sed 's#.*LOC=##g' | cut -d" " -f1 | sed 's#"##g'
     environment:
       - PATH: /bin:/usr/bin
     register: inventory_oh_list
@@ -53,20 +58,21 @@
       - opatchprereq
       - stopalldbs
 
-  - name: Set facts for patch and ORACLE_HOME in a list
+  - name: Set facts for patches and ORACLE_HOME with apply=true
     no_log: true
     set_fact: 
-      patch_oh_list: "{{patch_oh_list|default([]) + [{'patchid': item.0.patchid, 'apply': item.1.apply|default(true), 'path': item.1.path, 'subpath': item.0.subpath|default(''), 'version': item.0.version, 'opatchauto': item.0.opatchauto }] }}"
+      patch_oh_list: "{{patch_oh_list|default([]) + [{'patchid': item.0.patchid, 'apply': item.1.apply|default(false), 'path': item.1.path, 'subpath': item.0.subpath|default(''), 'version': item.0.version, 'opatchauto': item.0.opatchauto, 'postsql': item.0.postsql|default('') }] }}"
     with_subelements:
       - "{{oracle_patch_list}}"
       - ORACLE_HOME
-    when: item.0 is defined and item.1 is defined
+    when: item.1 is defined and item.1.apply | default(false)
     tags:
       - check_applied_patches
       - opatchautoapply
       - opatchapply
       - opatchprereq
       - stopalldbs
+      - opatchsql
 
   - name: Mount nfs share with installation media
     mount: src="{{ nfs_server_sw }}:{{ nfs_server_sw_path }}" name={{ oracle_stage_remote }} fstype=nfs state=mounted
@@ -75,7 +81,7 @@
       - updateopatch
       - opatchapply
       - opatchprereq
-    when: install_from_nfs|bool
+    when: install_from_nfs
 
   - name: Create stage directory
     file: dest={{ oracle_psu_stage }}/{{ item.version }} mode=775 owner={{ oracle_user }} group={{ oracle_group }} state=directory
@@ -83,18 +89,6 @@
        - "{{oracle_patch_list}}"
     tags:
       - directoriespsu
-    when: oracle_psu_apply_db
-
-  - name: Extract OPatch to stage-area
-    unarchive: src={{ oracle_stage }}/{{ item.1.filename }}  dest={{ oracle_psu_stage }}/{{ item.1.version }} copy=no
-    become: yes
-    become_user: "{{ oracle_user }}"
-    with_nested:
-      - "{{oracle_patch_list}}"
-      - "{{oracle_opatch_patch}}"
-    when: oracle_psu_apply_db and item.0.version == item.1.version and oracle_sw_unpack|bool
-    tags:
-      - oragridpatchunpack
 
 #  - name: Extract RDBMS psu files to stage-area
 #    unarchive: src={{ oracle_stage }}/{{ item.0.filename }}  dest={{ oracle_psu_stage }}/{{ oracle_install_version_gi }} copy=no
@@ -103,7 +97,7 @@
 #    with_together:
 #       - "{{oracle_sw_image_gi_psu}}"
 #       - "{{gi_applied_patches.results}}"
-#    when: oracle_psu_apply_db and oracle_sw_unpack|bool and "{{ item.0.version }}" == "{{ oracle_install_version_gi }}" and not {{ item.1.stdout }} != 0
+#    when: oracle_sw_unpack|bool and "{{ item.0.version }}" == "{{ oracle_install_version_gi }}" and not {{ item.1.stdout }} != 0
 #    tags:
 #      - oragridpsuunpack
 
@@ -124,7 +118,6 @@
     with_together:
       - "{{oracle_databases}}"
       - ""
-    when: oracle_psu_apply_db
     tags:
       - updateopatch
 
@@ -136,7 +129,6 @@
       - ""
     become: yes
     become_user: "{{ oracle_user }}"
-    when: oracle_psu_apply_db
     tags:
       - updateopatch
 
@@ -147,7 +139,7 @@
       - ""
     become: yes
     become_user: "{{ oracle_user }}"
-    when: oracle_psu_apply_db and ('11.2' in item.0.oracle_version_db or '11.2' in item.0.oracle_version_db)
+    when: ('11.2' in item.0.oracle_version_db)
     tags:
       - ocmconfig
 
@@ -156,7 +148,7 @@
     with_together:
       - "{{oracle_databases}}"
       - ""
-    when: oracle_psu_apply_db and ('11.2' in item.0.oracle_version_db or '11.2' in item.0.oracle_version_db)
+    when: ('11.2' in item.0.oracle_version_db)
     become: yes
     become_user: "{{ oracle_user }}"
     tags:
@@ -168,7 +160,6 @@
     become_user: "{{ oracle_user }}"
     with_items:
        - "{{host_oracle_home}}"
-    when: oracle_psu_apply_db
     register: db_applied_patches
     tags:
       - check_applied_patches
@@ -180,6 +171,7 @@
     with_subelements: 
        - "{{db_applied_patches.results}}"
        - stdout_lines
+    when: db_applied_patches is defined
     tags:
       - check_applied_patches
 
@@ -190,26 +182,20 @@
       - check_applied_patches
     when: patch_applied_list is defined
 
-  #
   - name: Copy helper script to stage
     copy: src={{ item }} dest={{ oracle_rsp_stage}} mode=755 
     with_items:
       - "datapatch_dbs_in_home.sh"
-      - "stop_dbs_in_home.sh"
+#      - "stop_dbs_in_home.sh"
     tags:
       - copyrsp
       - datapatchdbs
       - stopalldbs
 
-  - name: Stop Databases in Homes
-    shell: "{{oracle_rsp_stage}}/stop_dbs_in_home.sh {{item.oracle_home}}"
-    environment:
-      - PATH: /bin:/usr/bin
-    with_items:
-       - "{{host_oracle_home}}"
-    become: yes
-    become_user: "{{ oracle_user }}"
-    when: oracle_psu_apply_db and oracle_install_option_gi is not defined
+  # autostartup_service => make sure the service was installed
+  - name: Stop all Databases & Listener on systemd/init.d
+    service: name=oracle-rdbms state=stopped
+    when: autostartup_service and oracle_install_option_gi is not defined
     tags:
       - stopalldbs
       - opatchapply
@@ -220,7 +206,7 @@
        - "{{patch_oh_list}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: oracle_psu_apply_db and "12." in item.version  and not item.opatchauto and item.apply
+    when: not item.opatchauto and item.apply and "12." in item.version 
     register: opatchprereq2
     changed_when: "'failed' in opatchprereq2.stdout"
     tags:
@@ -230,7 +216,7 @@
   - debug: msg={{item.stdout_lines}}
     with_items:
        - "{{opatchprereq2.results[0]}}"
-    when: item.changed
+    when: opatchprereq2 is defined and item.changed
     tags:
       - opatchprereq
       - opatchapply
@@ -241,7 +227,7 @@
        - "{{patch_oh_list}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: oracle_psu_apply_db and "12." in  item.version  and not item.opatchauto and item.apply and oracle_install_option_gi is not defined
+    when: '"12." in  item.version  and not item.opatchauto and item.apply and oracle_install_option_gi is not defined'
     register: opatchprereq1
     changed_when: "'failed' in opatchprereq1.stdout"
     tags:
@@ -251,11 +237,10 @@
   - debug: msg={{item.stdout_lines}}
     with_items:
        - "{{opatchprereq1.results[0]}}"
-    when: item.changed
+    when: opatchprereq1 is defined and item.changed
     tags:
       - opatchprereq
       - opatchapply
-
 
   - name: Stop execution when CheckActiveFilesAndExecutables reports problems (non GI)
     fail: msg="Please review the debug output for reasons!"
@@ -271,7 +256,7 @@
     with_items:
        - "{{patch_oh_list}}"
     become: yes
-    when: oracle_psu_apply_db and item.opatchauto | default(false) and item.apply | default(false)
+    when: item.opatchauto | default(false) and item.apply | default(false)
     register: opatchautoapplyresult
     tags:
       - opatchautoapply
@@ -279,9 +264,13 @@
   - debug: msg={{item.stdout_lines}}
     with_items:
        - "{{opatchautoapplyresult.results[0]}}"
-    when: opatchautoapplyresult is defined and item.changed
+    when: opatchautoapplyresult is defined and item.stdout_lines is defined and item.changed
     tags:
       - opatchautoapply
+
+  - debug: msg={{patch_oh_list}}
+    tags:
+      - opatchapply
 
   - name: Apply Patches with OPatch apply
     shell: "{{item.path}}/OPatch/opatch apply -silent {{ocmrfparam}} -oh {{item.path}} {{patchpath}}"
@@ -289,7 +278,7 @@
        - "{{patch_oh_list}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: oracle_psu_apply_db and not item.opatchauto and item.apply
+    when: not item.opatchauto and item.apply
     failed_when: "'failed' in opatchapplyresult.stdout"
     changed_when: not "'These patch(es) will be skipped' in opatchapplyresult.stdout"
     register: opatchapplyresult
@@ -299,10 +288,49 @@
   - debug: var={{item.stdout_lines}}
     with_items:
        - "{{opatchapplyresult.results}}"
-    when: opatchapplyresult is defined
+    when: opatchapplyresult is defined and item.stdout_lines is defined
     tags:
       - opatchautoapply
       - opatchapply
+
+  - name: Create post operation sql scripts
+    template: src=opatch_post.sql.j2  dest={{ oracle_stage }}/rsp/opatch_post_{{ item.patchid }}.sql mode=0644
+    with_items:
+       - "{{patch_oh_list}}"
+    when: not item.opatchauto and item.apply and item.postsql != ''
+    tags:
+      - opatchsql
+
+  # autostartup_service => make sure the service was installed
+  # start everything before post sql
+  - name: Start all Databases & Listener on systemd/init.d
+    service: name=oracle-rdbms state=started
+    when: autostartup_service and oracle_install_option_gi is not defined
+    tags:
+      - opatchsql
+
+  - name: execute post sql
+    shell: "{{oracle_home_db}}/bin/sqlplus -L -S / as sysdba @{{ oracle_stage }}/rsp/opatch_post_{{ item.1.patchid }}.sql"
+    environment:
+      - ORACLE_HOME: "{{oracle_home_db}}"
+      - ORACLE_SID:  "{{item.0.oracle_db_name}}"
+      - ORACLE_BASE: "{{oracle_base}}"
+    become: yes
+    become_user: "{{ oracle_user }}"
+    register: postsqlresult
+    with_nested:
+       - "{{oracle_databases}}"
+       - "{{patch_oh_list}}"
+    when: oracle_install_option_gi is not defined and item.1.path == oracle_home_db and item.1.postsql != ''
+    tags:
+      - opatchsql
+
+  - debug: msg={{item}}
+    with_items:
+       - "{{postsqlresult.results}}"
+    when: item.changed and postsqlresult is defined
+    tags:
+      - opatchsql
 
   - name: Execute datapatch in every Home
     shell: "{{oracle_rsp_stage}}/datapatch_dbs_in_home.sh {{item.oracle_home}}"
@@ -313,7 +341,7 @@
     become: yes
     become_user: "{{ oracle_user }}"
     register: datapatchresult
-    when: oracle_psu_apply_db and oracle_install_option_gi is not defined
+    when: oracle_install_option_gi is not defined
     tags:
       - stopalldbs
       - opatchapply
@@ -327,14 +355,13 @@
       - opatchapply
       - datapatchdbs
 
-#  - name: Check opatch lsinventory
-#    shell: "{{ item.oracle_home }}/OPatch/opatch lsinventory"
+#  - name: Check opatch lspatches
+#    shell: "{{ item.oracle_home }}/OPatch/opatch lspatches"
 #    with_items:
 #       - "{{oracle_databases}}"
 #    become: yes
 #    become_user: "{{ oracle_user }}"
 #    register: opatchls
-#    when: oracle_psu_apply_db
 #    tags:
 #      - opatchls
 #      - opatchapply
@@ -342,7 +369,7 @@
 
 #  - debug: var=item.stdout_lines
 #    with_items: "{{opatchls.results}}"
-#    when: oracle_psu_apply_db
+#    when: opatchls is defined
 #    tags:
 #      - opatchapply
 #      - opatchautoapply
