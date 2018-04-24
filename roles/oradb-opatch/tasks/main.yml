@@ -13,7 +13,7 @@
   # environment is needed for OL/SLES, due to different directories for executables...
   # grep LOC= in /u01/app/oraInventory/ContentsXML/inventory.xml and search for LOC=
   - name: Get ORACLE_HOMEs from oraInventory
-    shell: grep "LOC=" $(cat /etc/oraInst.loc | grep inventory_loc | cut -d"=" -f2)/ContentsXML/inventory.xml | sed 's#.*LOC=##g' | cut -d" " -f1 | /usr//bin/sed 's#"##g'
+    shell: grep "LOC=" $(cat /etc/oraInst.loc | grep inventory_loc | cut -d"=" -f2)/ContentsXML/inventory.xml | sed 's#.*LOC=##g' | cut -d" " -f1 | sed 's#"##g'
     environment:
       - PATH: /bin:/usr/bin
     register: inventory_oh_list
