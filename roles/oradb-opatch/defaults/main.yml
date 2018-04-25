@@ -40,6 +40,8 @@
   oracle_rsp_stage: "{{ oracle_stage }}/rsp"
   oracle_psu_stage: "{{ oracle_stage }}/psu"
 
+  ocmrfparam: "{% if '11.2' in item.version %} -ocmrf {{item.path}}/OPatch/ocm.rsp {% endif %}"
+
   oracle_hostname: "{{ ansible_fqdn }}"                            # Full (FQDN) name of the host
 
 #   oracle_patch_list:
