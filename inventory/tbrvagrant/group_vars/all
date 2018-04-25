@@ -5,7 +5,7 @@
   oracle_sw_unpack: False
 
   configure_hugepages_by: memory
-  size_in_gb_hugepages: 2
+  size_in_gb_hugepages: 0
 
   oracle_stage_remote: /sw/oracle/linux64
 
