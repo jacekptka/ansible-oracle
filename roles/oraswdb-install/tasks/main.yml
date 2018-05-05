@@ -9,7 +9,7 @@
 
   - name: Mount nfs share with installation media
     mount: src="{{ nfs_server_sw }}:{{ nfs_server_sw_path }}" name={{ oracle_stage_remote }} fstype=nfs state=mounted
-    when: install_from_nfs|bool
+    when: install_from_nfs
     tags:
       - nfsmountdb
 
@@ -24,45 +24,18 @@
     tags:
     - orainst
 
-  - name: Create stage directory (base)
-    file: dest={{ oracle_stage }} mode=775 owner={{ oracle_user }} group={{ oracle_group }} state=directory
+  - name: Create common directories
+    file: dest={{ item.name }} mode={{ item.mode}} owner={{ item.owner }} group={{ item.group }} state=directory
+    with_items: "{{oracle_directories}}"
     tags:
       - directoriesdb
 
   - name: Create stage directory (version specific)
-    file: dest={{ oracle_stage }}/{{ item[0].version }} mode=775 owner={{ oracle_user }} group={{ oracle_group }} state=directory
-    with_nested:
-       - "{{ oracle_sw_image_db }}"
+    file: dest={{ oracle_stage }}/{{ item.oracle_version_db }} mode=775 owner={{ oracle_user }} group={{ oracle_group }} state=directory
+    with_items:
        - "{{ oracle_databases }}"
-    when: master_node and item[0].version == item[1].oracle_version_db
-    tags:
-      - directoriesdb
-
-  - name: Create rsp stage directory
-    file: dest={{ oracle_rsp_stage }} mode=775 owner={{ oracle_user }} group={{ oracle_group }} state=directory
-    tags:
-      - directoriesdb
-
-  - name: Create ORACLE_BASE directory
-    file: dest={{ oracle_base }} mode=775 owner={{ oracle_user }} group={{ oracle_group }} state=directory
-    tags:
-      - directoriesdb
-
-  - name: Create cfgtoollogs directory
-    file: dest={{ oracle_base }}/cfgtoollogs mode=775 owner={{ oracle_user }} group={{ oracle_group }} state=directory recurse=yes
-    become: yes
-    tags:
-      - directoriesdb
-
-  - name: Create admin directory
-    file: dest={{ oracle_base }}/admin mode=775 owner={{ oracle_user }} group={{ oracle_group }} state=directory
-    become: yes
-    tags:
-      - directoriesdb
-
-  - name: Create audit directory
-    file: dest={{ oracle_base }}/audit mode=775 owner={{ oracle_user }} group={{ oracle_group }} state=directory
-    become: yes
+    run_once: "{{ configure_cluster}}"
+    when: oracle_databases is defined
     tags:
       - directoriesdb
 
@@ -79,7 +52,8 @@
       - "{{oracle_databases}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: master_node and item[0].version == item[1].oracle_version_db and not is_sw_source_local and oracle_sw_copy|bool
+    run_once: "{{ configure_cluster}}"
+    when: item[0].version == item[1].oracle_version_db and not is_sw_source_local and oracle_sw_copy
     tags:
       - oradbsw
 
@@ -90,41 +64,47 @@
       - "{{oracle_databases}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: master_node and item[0].version == item[1].oracle_version_db and is_sw_source_local and oracle_sw_copy|bool
+    run_once: "{{ configure_cluster}}"
+    when: item[0].version == item[1].oracle_version_db and is_sw_source_local and oracle_sw_copy
     tags:
       - oradbsw
 
   - name: Extract files to stage-area
-    unarchive: src={{ oracle_stage }}/{{ item[0].filename }}  dest={{ oracle_stage }}/{{ item[0].version }} copy=no
+    unarchive: src={{ oracle_stage }}/{{ item[0].filename }}  dest={{ oracle_stage }}/{{ item[0].version }} copy=no creates="{{ oracle_stage }}/{{ item[0].version }}/{{ item[0].creates}}"
     with_nested:
       - "{{oracle_sw_image_db}}"
       - "{{oracle_databases}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: master_node and item[0].version == item[1].oracle_version_db and oracle_sw_copy|bool and oracle_sw_unpack|bool
+    run_once: "{{ configure_cluster}}"
+    when: item[0].version == item[1].oracle_version_db and oracle_sw_copy and oracle_sw_unpack
     tags:
       - oradbswunpack
 
   - name: Extract files to stage-area (from remote location)
-    unarchive: src={{ oracle_stage_remote }}/{{ item[0].filename }}  dest={{ oracle_stage }}/{{ item[0].version }} copy=no
+    unarchive: src={{ oracle_stage_remote }}/{{ item[0].filename }}  dest={{ oracle_stage }}/{{ item[0].version }} copy=no  creates="{{ oracle_stage }}/{{ item[0].version }}/{{ item[0].creates}}"
     with_nested:
       - "{{oracle_sw_image_db}}"
       - "{{oracle_databases}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: master_node and item[0].version == item[1].oracle_version_db and not oracle_sw_copy|bool and oracle_sw_unpack|bool
+    run_once: "{{ configure_cluster}}"
+    when: item[0].version == item[1].oracle_version_db and not oracle_sw_copy and oracle_sw_unpack
+    # args:
+    #   creates: "{{ oracle_stage }}/{{ item[0].version }}/database/runInstaller"
     tags:
       - oradbswunpack
 
 
   - name: Setup response file for install (DB)
-    template: src=db-install.rsp.{{ item.0.oracle_version_db }}.j2 dest={{ oracle_rsp_stage }}/{{ oracle_db_responsefile }}
+    template: src=db-install.rsp.{{ item.0.oracle_version_db }}.j2 dest={{ oracle_rsp_stage }}/{{ oracle_db_responsefile }} mode=0600
     with_together:
      - "{{oracle_databases}}"
      - "{{checkdbswinstall.results}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: master_node #and item.1.stdout != "1"
+    run_once: "{{ configure_cluster}}"
+    #when: master_node #and item.1.stdout != "1"
     tags:
       - responsefileswdb
 
@@ -135,7 +115,8 @@
      - "{{checkdbswinstall.results}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: master_node #and item.1.stdout != "1"
+    run_once: "{{ configure_cluster}}"
+    #when: master_node #and item.1.stdout != "1"
     tags:
       - responsefileswdb
 
@@ -147,7 +128,8 @@
      - "{{checkdbswinstall.results}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: master_node and item.1.stdout != "1"
+    run_once: "{{ configure_cluster}}"
+    when: item.1.stdout != "1"
     tags:
       - oradbinstall
     register: oradbinstall
@@ -156,7 +138,8 @@
     with_items:
         #- "{{ oradbinstall.results }}"
         - "{{ oradbinstall.results|map(attribute='stdout_lines')|list }}"
-    when: master_node
+    run_once: "{{ configure_cluster}}"
+    #when: master_node
     tags:
      - oradbinstall
     ignore_errors: true
@@ -174,7 +157,8 @@
     with_together:
      - "{{oracle_databases}}"
      - "{{checkdbswinstall.results}}"
-    when: master_node and item.1.stdout != "1"
+    run_once: "{{ configure_cluster}}"
+    when: item.1.stdout != "1"
     #with_items: oracle_databases
     #when: master_node
     tags:
@@ -188,13 +172,14 @@
     become_user: "{{ oracle_user }}"
     tags:
       - glogindb
-      
+
   - name: Check opatch lsinventory (DB)
     shell: "{{ oracle_home_db }}/OPatch/opatch lsinventory"
     with_items: "{{oracle_databases}}"
     become: yes
     become_user: "{{ oracle_user }}"
-    when: master_node
+    run_once: "{{ configure_cluster}}"
+    #when: master_node
     register: opatchls
     tags:
      - opatchls
@@ -202,14 +187,15 @@
   - debug: var=item
     with_items:
         - "{{ opatchls.results|map(attribute='stdout_lines')|list }}"
-    when: master_node
+    run_once: "{{ configure_cluster}}"
+    #when: master_node
     tags:
      - opatchls
     ignore_errors: true
 
   - name: Unmount nfs share with installation media
     mount: src="{{ nfs_server_sw }}:{{ nfs_server_sw_path }}" name={{ oracle_stage_remote }} fstype=nfs state=absent
-    when: install_from_nfs|bool
+    when: install_from_nfs
     tags:
       - nfsunmountdb
 
