@@ -1,0 +1,28 @@
+---
+   oracle_patch_list:
+      - desc: "Database Patch Set Update : 12.1.0.2.180116"
+        patchid: 26925311
+        subpath: 27010888/27010888/27010872
+        version: 12.1.0.2
+        opatchauto: False
+        ORACLE_HOME:
+           - path: /u01/app/oracle/12.1.0.2/dbhome1
+             apply: True
+
+      - desc: "Database PSU 12.1.0.2.180116, Oracle JavaVM Component"
+        patchid: 27001733
+        subpath: 27010888/27010888
+        version: 12.1.0.2
+        opatchauto: False
+        ORACLE_HOME:
+           - path: /u01/app/oracle/12.1.0.2/dbhome1
+             apply: True
+
+      - desc: "OCW Patch Set Update : 12.1.0.2.180116"
+        patchid: 26925218
+        subpath: 27010888/27010888/27010872
+        version: 12.1.0.2
+        opatchauto: False
+        ORACLE_HOME:
+           - path: /u01/app/oracle/12.1.0.2/dbhome1
+             apply: True
