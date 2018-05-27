@@ -31,9 +31,9 @@
       - stopalldbs
 
   # we only need the homes with are usable as oracle_user
-  - name: Check owner of OPatch for inventory_oh_list
+  - name: Check owner of SQLPlus for inventory_oh_list
     ignore_errors: True
-    file: path={{item}}/OPatch/opatch owner="{{ oracle_user }}" state=file
+    file: path={{item}}/bin/sqlplus owner="{{ oracle_user }}" state=file
     with_items:
       - "{{inventory_oh_list.stdout_lines}}"
     register: usable_inventory_oh_list
