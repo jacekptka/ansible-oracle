@@ -24,6 +24,7 @@
    sudo: yes
    roles:
       - oraswdb-install
-      - oradb-create
+      - oradb-manage-db
+      - oradb-opatch
       - oradb-rman
       - orahost-logrotate
