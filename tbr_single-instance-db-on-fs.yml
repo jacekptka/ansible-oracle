@@ -1,6 +1,5 @@
 ---
 
-
  - name: Host configuration
    hosts: tbr_orafs
    user: vagrant
@@ -9,6 +8,8 @@
       - common
       - orahost
 
+ - include: cx_Oracle.yml
+
  - name: Database Server Installation & Database Creation
    hosts: tbr_orafs
    user: vagrant
@@ -16,5 +17,16 @@
    roles:
       - oraswdb-install
       - oradb-manage-db
+
+ - name: Database Server Configuration
+   hosts: tbr_orafs
+   user: vagrant
+   sudo: yes
+   roles:
+      - oradb-manage-parameters
+      - oradb-manage-pdb
+      - oradb-manage-tablespace
+      - oradb-manage-roles
+      - oradb-manage-users
       - oradb-rman
       - oradb-opatch

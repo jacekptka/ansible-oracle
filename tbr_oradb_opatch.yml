@@ -1,0 +1,9 @@
+---
+
+ - name: Database Server Configuration
+   hosts: tbr_orafs
+   user: vagrant
+   sudo: yes
+   roles:
+      - oradb-opatch
+

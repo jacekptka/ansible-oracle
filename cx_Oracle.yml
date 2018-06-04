@@ -1,0 +1,24 @@
+---
+
+ - name: Install cx_Oracle
+   hosts: tbr_orafs
+   user: vagrant
+   sudo: yes
+   tasks:
+    - name: Install RPMs
+      yum: name={{item}} state=latest
+      with_items:
+        - python-pip
+        - "https://github.com/bumpx/oracle-instantclient/raw/master/oracle-instantclient12.2-basic-12.2.0.1.0-1.x86_64.rpm"
+ 
+    - name: Configure InstantClient
+      shell: "echo /usr/lib/oracle/12.2/client64/lib > /etc/ld.so.conf.d/oracle-instantclient.conf"
+      tags: configclient
+ 
+    - name: ldconfig
+      shell: ldconfig
+      tags: configclient
+ 
+    - name: Install cx_Oracle
+      pip: name=cx_Oracle state=latest
+      tags: pip

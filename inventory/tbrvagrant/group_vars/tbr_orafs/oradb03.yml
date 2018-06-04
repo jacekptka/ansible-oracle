@@ -1,16 +1,11 @@
 ---
-   role_separation: false
-   configure_cluster: false
-
-   oracle_install_version_gi: 12.2.0.1
-   
    configure_host_disks: true
 
    host_fs_layout:
     - vgname: orabasevg
       state: present
       filesystem:
-        - {mntp: /u01, lvname: orabaselv, lvsize: 12G, fstype: ext4}
+        - {mntp: /u01, lvname: orabaselv, lvsize: 20G, fstype: ext4}
       disk:
         - {device: /dev/sdb, pvname: /dev/sdb1}
 
@@ -18,6 +13,6 @@
       state: present
       filesystem:
         - {mntp: /u02, lvname: oradatalv, lvsize: 15G, fstype: ext4}
-        - {mntp: /u03, lvname: orafralv, lvsize: 10G, fstype: ext4}
+        - {mntp: /u03, lvname: orafralv, lvsize: 12G, fstype: ext4}
       disk:
         - {device: /dev/sdc, pvname: /dev/sdc1}
