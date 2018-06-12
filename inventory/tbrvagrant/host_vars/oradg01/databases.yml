@@ -1,0 +1,75 @@
+---
+
+   datafile_dest: "+DATA"
+   recoveryfile_dest: "+FRA"
+
+   rman_script_dir:                  /u01/app/oracle/rman/script
+   rman_log_dir:                     /u01/app/oracle/rman/log
+
+   rmanautofs:                       True
+   rmanautofsmount:                  "/u10/autofs/"
+   rman_retention_policy:            "RECOVERY WINDOW OF 14 DAYS"
+   rman_channel_disk:                "FORMAT   '/u10/autofs/oradg01/backup/rman/%d/%d_%T_%U'"
+   rman_controlfile_autobackup_disk: "'/u10/autofs/oradg01/backup/rman/%d/%d_%F'"
+
+   # RMAN-Catalog
+   rman_catalog_host: localhost              # Hostname of RMAN-Cataloghost
+   rman_catalog_service: orclpdb             # Service of RMAN-Catalogdatabase
+
+   oracle_databases:                                            # Dictionary describing the databases to be installed
+        - home: db1                                            # 'Last' directory in ORACLE_HOME path (e.g /u01/app/oracle/12.1.0.2/racdb)
+          oracle_version_db: 12.2.0.1                          # Oracle versiono
+          oracle_edition: EE                                   # The edition of database-server (EE,SE,SEONE)
+          oracle_db_name: orclcdb                               # Database name
+#          dbca_templatename: tbr_dbca.dbc
+          oracle_db_type: SI                                  # Type of database (RAC,RACONENODE,SI)
+          is_container: true                                  # (true/false) Is the database a container database
+          storage_type: ASM                                    # Database storage to be used. ASM or FS.
+          oracle_db_mem_totalmb: 1024                          # Amount of RAM to be used for SGA
+          oracle_database_type: MULTIPURPOSE                   # MULTIPURPOSE|DATA_WAREHOUSING|OLTP
+          redolog_size_in_mb: 100
+          state: present
+
+          # RMAN-Catalogconnect
+          rman_user: rmancat
+          rman_password: rman
+          rman_tnsalias: orclpdb
+          rman_wallet: True
+
+          rman_jobs:
+            - name: parameter
+            - name: archivelog_enable
+            - name: archivelog
+              disabled: False
+              day: "*"
+              weekday: "*"
+              hour: "*"
+              minute: "10"
+            - name: online_level0
+              disabled: False
+              day: "*"
+              weekday: "0"
+              hour: "02"
+              minute: "30"
+            - name: online_level1
+              disabled: False
+              day: "*"
+              weekday: "1-6"
+              hour: "02"
+              minute: "30"
+
+        - home: db1                                            # 'Last' directory in ORACLE_HOME path (e.g /u01/app/oracle/12.1.0.2/racdb)
+          oracle_version_db: 12.2.0.1                          # Oracle versiono
+          oracle_edition: EE                                   # The edition of database-server (EE,SE,SEONE)
+          oracle_db_name: rmandb                               # Database name
+#          dbca_templatename: tbr_dbca.dbc
+          oracle_db_type: SI                                  # Type of database (RAC,RACONENODE,SI)
+          is_container: false                                  # (true/false) Is the database a container database
+          storage_type: ASM                                    # Database storage to be used. ASM or FS.
+          oracle_db_mem_totalmb: 1024                          # Amount of RAM to be used for SGA
+          oracle_database_type: MULTIPURPOSE                   # MULTIPURPOSE|DATA_WAREHOUSING|OLTP
+          redolog_size_in_mb: 100
+          state: present
+
+          rman_jobs:
+            - name: parameter
