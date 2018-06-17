@@ -5,6 +5,7 @@
 
    asm_diskgroups:        # ASM Diskgroups used for DB-storage. Should map to dict asm_storage_layout. 
     - diskgroup: data
+      state: present
       properties:
         - {redundancy: external, ausize: 4}
       attributes:
@@ -12,7 +13,9 @@
         - {name: compatible.asm, value: "{{ oracle_install_version_gi }}"}
       disk:
         - {device: /dev/sdc, asmlabel: data01}
+#        - {device: /dev/sdd, asmlabel: data02}
     - diskgroup: fra
+      state: present
       properties:
         - {redundancy: external, ausize: 4}
       attributes:
@@ -20,3 +23,4 @@
         - {name: compatible.asm, value: "{{ oracle_install_version_gi }}"}
       disk:
         - {device: /dev/sdg, asmlabel: fra01}
+#        - {device: /dev/sdh, asmlabel: fra02}

@@ -4,6 +4,8 @@
   oracle_sw_copy: False
   oracle_sw_unpack: False
   oracle_user: oracle
+  configure_cluster: False
+  role_separation: False
 
   configure_hugepages_by: memory
   size_in_gb_hugepages: 0

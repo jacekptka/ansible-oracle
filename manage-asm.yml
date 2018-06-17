@@ -1,0 +1,10 @@
+---
+
+
+ - name: Manage ASM-Diskgroups
+   hosts: "{{ hostgroup }}"
+   user: vagrant
+   sudo: yes
+   roles:
+      - orahost-storage
+      - oraasm-manage-diskgroups
