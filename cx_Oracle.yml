@@ -8,6 +8,8 @@
     - name: Install RPMs
       yum: name={{item}} state=latest
       with_items:
+        - python-devel
+        - gcc
         - python-pip
         - "https://github.com/bumpx/oracle-instantclient/raw/master/oracle-instantclient12.2-basic-12.2.0.1.0-1.x86_64.rpm"
         - "https://github.com/bumpx/oracle-instantclient/raw/master/oracle-instantclient12.2-sqlplus-12.2.0.1.0-1.x86_64.rpm"
