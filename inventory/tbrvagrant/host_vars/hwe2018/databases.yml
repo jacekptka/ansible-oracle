@@ -19,7 +19,6 @@
           oracle_version_db: 12.2.0.1                          # Oracle versiono
           oracle_edition: EE                                   # The edition of database-server (EE,SE,SEONE)
           oracle_db_name: orclcdb                               # Database name
-          dbca_templatename: tbr_dbca.dbc
           oracle_db_type: SI                                  # Type of database (RAC,RACONENODE,SI)
           is_container: true                                  # (true/false) Is the database a container database
           storage_type: ASM                                    # Database storage to be used. ASM or FS.
