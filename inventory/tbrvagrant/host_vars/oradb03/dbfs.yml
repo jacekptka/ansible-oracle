@@ -2,4 +2,4 @@
    role_separation: false
    configure_cluster: false
 
-   oracle_install_version_gi: 12.2.0.1
+#   oracle_install_version_gi: 12.2.0.1
