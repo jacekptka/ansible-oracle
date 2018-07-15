@@ -5,6 +5,8 @@
   set_fact:
       create_listener: "{{ create_listener }}"
   with_items: "{{ oracle_databases }}"
+  loop_control:
+    loop_var: dbh
   tags: set_fact
 
 - include_tasks: listener.yml
@@ -12,8 +14,17 @@
       - "{{ oracle_databases }}"
   loop_control:
     loop_var: dbh
-  when: create_listener and oracle_databases is defined
+  when: not create_listener and oracle_databases is defined
   tags: listener
+
+- include_tasks: listener_template.yml
+  with_items:
+      - "{{ oracle_databases }}"
+  loop_control:
+    loop_var: dbh
+    label: "{{ oracle_home_db }} {{ dbh.oracle_db_name }}"
+  when: create_listener and oracle_databases is defined
+  tags: listener2
 
 - name: manage-db | Add change-pdb script
   template:

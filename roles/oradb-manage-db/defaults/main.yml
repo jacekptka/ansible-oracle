@@ -9,6 +9,8 @@
   oracle_dba_group: dba                          # Primary group for oracle_user.
   grid_dba_group: asmdba                          # Primary group for oracle_user.
 
+  listener_template_file: "listener.ora.j2"
+
   oracle_home_db: "{%- if dbh is defined %}
                      {%- if dbh.oracle_home is defined -%}
                          {{ dbh.oracle_home }}
@@ -28,6 +30,14 @@
                          {{ oracle_base }}/{{ item.oracle_version_db }}/{{ item.home }}
                        {%- endif %}
                     {%- endif %}"
+
+
+  oracle_env_lsnrctl:
+        ORACLE_BASE: "{{ oracle_base}}"
+        ORACLE_SID: "{{ dbh.oracle_db_instance_name | default(dbh.oracle_db_name)}}"
+        ORACLE_HOME: "{{ oracle_home_db}}"
+        LD_LIBRARY_PATH: "{{ oracle_home_db}}/lib"
+        PATH: "{{ oracle_home_db}}/bin:$PATH:/usr/local/bin:/bin:/sbin:/usr/bin:/usr/sbin"
 
   oracle_env_dbca:
         ORACLE_HOME: "{{ oracle_home_db}}"
@@ -52,10 +62,19 @@
   oracle_gi_cluster_type: STANDARD
   hostgroup_hub: "{{ hostgroup }}-hub"
   hostgroup_leaf: "{{ hostgroup }}-leaf"
-  create_listener: "{% if oracle_install_option_gi is defined %}False{% elif oracle_install_option_gi is undefined %}{% if dbh.listener_name is defined %}True{% else %}False{% endif %}{% endif %}"
+  create_listener: "{% if oracle_install_option_gi is defined %}False
+                    {%- elif oracle_install_option_gi is undefined %}
+                      {%- if dbh.listener_name is defined or item.listener_name is defined%}True
+                      {%- elif item.listener_name is defined %}True
+                      {%- else %}False
+                      {%- endif %}
+                    {%- endif %}"
   listener_name_template: "{% if dbh.listener_name is defined %}{{ dbh.listener_name }}{% else %}{{ listener_name }}{% endif %}"
   listener_protocols_template: "{% if dbh.listener_protocols is defined %}{{ dbh.listener_protocols }}{% else %}{{ listener_protocols }}{% endif %}"
   listener_port_template: "{% if dbh.listener_port is defined %}{{ dbh.listener_port }}{% else %}{{ listener_port }}{% endif %}"
+  listener_adr_template: "{% if dbh.listener_adr is defined %}{{ dbh.listener_adr }}{% else %}{{ listener_adr }}{% endif %}"
+
+  listener_adr: "{{ oracle_base }}"
   listener_name: LISTENER
   listener_protocols: TCP
   listener_port: 1521

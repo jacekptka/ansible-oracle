@@ -1,9 +1,12 @@
+- debug: 
+    msg: "{{ listener_name_template }} : {{ oracle_home_db }} {{ oracle_netca_rsp }}"
+  when: create_listener
+
 - name: listener | Create responsefile for listener configuration
   template: src=netca.rsp.{{ dbh.oracle_version_db }}.j2 dest={{ oracle_rsp_stage }}/{{ oracle_netca_rsp }}
   become: true
   become_user: "{{ oracle_user }}"
   when: create_listener
-#  when: create_listener and oracle_install_option_gi is defined and oracle_install_option_gi
   tags: responsefile_netca, listener_install
 
 - name: listener | Create listener
@@ -13,5 +16,4 @@
   become: true
   become_user: "{{ oracle_user }}"
   when: create_listener
-#  when: create_listener and oracle_install_option_gi is defined and oracle_install_option_gi
   tags: listener_install
