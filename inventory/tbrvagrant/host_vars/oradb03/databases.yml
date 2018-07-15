@@ -16,6 +16,7 @@
        cdb: db122
        home: dbhome1
        oracle_version_db: 12.2.0.1
+       listener_port: 1522
        state: present
        init_parameters:
          - {name: db_create_file_dest, value: '/u02/oradata', scope: both, state: present}
@@ -54,6 +55,9 @@
           redolog_size: 20M
           redolog_groups: 3
           state: present
+          listener_name: LSNR1522
+          listener_port: 1522
+          oracle_init_params: "local_listener='localhost:1522'"
           init_parameters:
             - {name: audit_trail, value: 'NONE', scope: spfile, state: present}
             - {name: control_management_pack_access, value: 'NONE', scope: spfile, state: present}
@@ -88,6 +92,9 @@
           redolog_size: 20M
           redolog_groups: 3
           state: present
+          listener_name: LSNR1523
+          listener_port: 1523
+          oracle_init_params: "local_listener='localhost:1523'"
 
           tablespaces:
             - { name: tools, size: 10M, bigfile: True, autoextend: false , next: 5M, maxsize: 500M, content: permanent, state: present }
