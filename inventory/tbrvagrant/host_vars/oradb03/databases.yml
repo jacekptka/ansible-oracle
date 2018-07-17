@@ -1,8 +1,6 @@
 ---
 
    autostartup_service: True
-   oracle_dbf_dir_fs: /u02/oradata
-   oracle_reco_dir_fs: /u03/fra
 
    rman_script_dir:                  /u01/app/oracle/rman
    rman_log_dir:                     /u01/app/oracle/rman/log
@@ -12,7 +10,6 @@
 
    oracle_pdbs:
      - pdb_name: orclpdb1
-#       datafile_dest: /u02/oradata/DB122U
        cdb: db122
        home: dbhome1
        oracle_version_db: 12.2.0.1
@@ -57,7 +54,8 @@
           state: present
           listener_name: LSNR1522
           listener_port: 1522
-          oracle_init_params: "local_listener='localhost:1522'"
+          recoveryfile_dest: "/u02/fra"
+          oracle_init_params: "local_listener='localhost:1522',db_create_file_dest='/u02/oradata'"
           init_parameters:
             - {name: audit_trail, value: 'NONE', scope: spfile, state: present}
             - {name: control_management_pack_access, value: 'NONE', scope: spfile, state: present}
@@ -94,7 +92,8 @@
           state: present
           listener_name: LSNR1523
           listener_port: 1523
-          oracle_init_params: "local_listener='localhost:1523'"
+          recoveryfile_dest: "/u02/fra"
+          oracle_init_params: "local_listener='localhost:1523,db_create_file_dest='/u02/oradata''"
 
           tablespaces:
             - { name: tools, size: 10M, bigfile: True, autoextend: false , next: 5M, maxsize: 500M, content: permanent, state: present }
