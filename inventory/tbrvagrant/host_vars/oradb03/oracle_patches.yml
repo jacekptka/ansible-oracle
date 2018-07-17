@@ -1,53 +1,5 @@
 ---
    oracle_patch_list:
-      # 12.2.0.1
-      - desc: "Database Patch Set Update : 12.2.0.1.180417"
-        patchid: 27674384
-        subpath: 27726454/27726454/27468969
-        version: 12.2.0.1
-        opatchauto: False
-        ORACLE_HOME:
-           - path: /u01/app/oracle/12.2.0.1/dbhome1
-             apply: True
-
-      - desc: "OCW APR 2018 RELEASE UPDATE 12.2.0.1.0.180417"
-        patchid: 27464465
-        subpath: 27726454/27726454/27468969
-        version: 12.2.0.1
-        opatchauto: False
-        ORACLE_HOME:
-           - path: /u01/app/oracle/12.2.0.1/dbhome1
-             apply: True
-
-      - desc: "Database PSU 12.2.0.1.180417, Oracle JavaVM Component"
-        patchid: 27475613
-        subpath: 27726454/27726454
-        version: 12.2.0.1
-        opatchauto: False
-        ORACLE_HOME:
-           - path: /u01/app/oracle/12.2.0.1/dbhome1/
-             apply: True
-
-      # 12.1.0.2
-      - desc: "Database Patch Set Update : 12.1.0.2.180417"
-        patchid: 27338041 
-        subpath: 27726471/27726471/
-        version: 12.1.0.2
-        opatchauto: False
-        ORACLE_HOME:
-           - path: /u01/app/oracle/12.1.0.2/dbhome2
-             apply: True
-
-      - desc: "Database PSU 12.1.0.2.180417, Oracle JavaVM Component"
-        patchid: 27475603
-        subpath: 27726471/27726471/
-        version: 12.1.0.2
-        opatchauto: False
-        ORACLE_HOME:
-           - path: /u01/app/oracle/12.1.0.2/dbhome2
-             apply: True
-
-
       - desc: "Database Patch Set Update : 12.1.0.2.180116"
         patchid: 26925311
         subpath: 27010888/27010888/27010872
@@ -55,7 +7,7 @@
         opatchauto: False
         ORACLE_HOME:
            - path: /u01/app/oracle/12.1.0.2/dbhome2
-             apply: False
+             apply: True
 
       - desc: "Database PSU 12.1.0.2.180116, Oracle JavaVM Component"
         patchid: 27001733
@@ -64,7 +16,7 @@
         opatchauto: False
         ORACLE_HOME:
            - path: /u01/app/oracle/12.1.0.2/dbhome2
-             apply: False
+             apply: True
 
       - desc: "OCW Patch Set Update : 12.1.0.2.180116"
         patchid: 26925218
