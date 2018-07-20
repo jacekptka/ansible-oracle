@@ -1,5 +1,23 @@
 ---
    oracle_patch_list:
+      - desc: "Patch 28183653 - RDBMS Jul 2018 Release Update 12.2.0.1.180717"
+        patchid: 28163133
+        subpath: 28183653/28183653
+        version: 12.2.0.1
+        opatchauto: False
+        ORACLE_HOME:
+           - path: /u01/app/oracle/product/12.2.0.1/dbhome1
+             apply: True
+
+      - desc: "Oracle JavaVM Component Release Update 12.2.0.1.180717"
+        patchid: 27923353
+        subpath: 27923353
+        version: 12.2.0.1
+        opatchauto: False
+        ORACLE_HOME:
+           - path: /u01/app/oracle/product/12.2.0.1/dbhome1
+             apply: True
+
       - desc: "Database Patch Set Update : 12.1.0.2.180116"
         patchid: 26925311
         subpath: 27010888/27010888/27010872
