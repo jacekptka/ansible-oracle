@@ -1,0 +1,12 @@
+
+oracle_listeners_config:
+    LISTENER:
+        home: 18300-base
+        address:
+          - host: "{{ansible_hostname}}"
+            protocol: TCP
+
+listener_installed:
+      - home: 18300-base
+        listener_name: LISTENER
+        state: present
